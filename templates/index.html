@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CUDA Vez Más · Asistente virtual</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1c2430;
+      --muted: #5d6b7a;
+      --line: #e4e8ee;
+      --paper: #f4f6f8;
+      --card: #ffffff;
+      --brand: #0f6e6b;
+      --brand-dark: #0b5553;
+      --user: #0f6e6b;
+      --bot: #ffffff;
+      --error: #9d2c2c;
+      --error-bg: #fdecec;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, #e7f4f3, transparent 36%),
+        var(--paper);
+    }
+
+    main {
+      width: min(760px, calc(100% - 32px));
+      margin: 32px auto;
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 64px);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: 0 16px 40px rgba(28, 36, 48, 0.08);
+      overflow: hidden;
+    }
+
+    header {
+      padding: 28px 28px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .store {
+      margin: 0;
+      color: var(--brand);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 6px 0 0;
+      font-size: 1.8rem;
+      font-weight: 650;
+    }
+
+    #messages {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 24px 28px;
+      overflow-y: auto;
+    }
+
+    .message {
+      max-width: 78%;
+      padding: 12px 14px;
+      border-radius: 16px;
+      line-height: 1.45;
+    }
+
+    .message p { margin: 0; white-space: pre-wrap; }
+
+    .author {
+      margin-bottom: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .message.user {
+      align-self: flex-end;
+      color: #ffffff;
+      background: var(--user);
+      border-bottom-right-radius: 6px;
+    }
+
+    .message.bot {
+      align-self: flex-start;
+      background: #f7f8fa;
+      border: 1px solid var(--line);
+      border-bottom-left-radius: 6px;
+    }
+
+    .message.error {
+      align-self: stretch;
+      max-width: none;
+      color: var(--error);
+      background: var(--error-bg);
+      border: 1px solid #f3c7c7;
+    }
+
+    form {
+      display: flex;
+      gap: 10px;
+      padding: 18px 20px 20px;
+      border-top: 1px solid var(--line);
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid #cfd6df;
+      border-radius: 12px;
+      padding: 13px 14px;
+      font: inherit;
+      color: var(--ink);
+    }
+
+    input:focus {
+      outline: 2px solid rgba(15, 110, 107, 0.25);
+      border-color: var(--brand);
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 0 18px;
+      background: var(--brand);
+      color: #ffffff;
+      font: inherit;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    button:hover { background: var(--brand-dark); }
+    button:disabled { opacity: 0.65; cursor: wait; }
+
+    @media (max-width: 640px) {
+      main { width: 100%; margin: 0; min-height: 100vh; border: 0; border-radius: 0; }
+      .message { max-width: 90%; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="store">CUDA Vez Más</p>
+      <h1>Asistente virtual</h1>
+    </header>
+
+    <section id="messages" aria-live="polite">
+      <article class="message bot">
+        <p class="author">Asistente</p>
+        <p>Hola. Puedo orientarte sobre pedidos, envíos, devoluciones, cambios y atención al cliente.</p>
+      </article>
+    </section>
+
+    <form id="chat-form">
+      <input id="message" name="message" type="text" placeholder="Escribe tu mensaje" autocomplete="off" required>
+      <button type="submit">Enviar</button>
+    </form>
+  </main>
+
+  <script>
+    const form = document.querySelector("#chat-form");
+    const input = document.querySelector("#message");
+    const messages = document.querySelector("#messages");
+    const button = form.querySelector("button");
+
+    function addMessage(text, role) {
+      const item = document.createElement("article");
+      item.className = "message " + role;
+
+      if (role !== "error") {
+        const author = document.createElement("p");
+        author.className = "author";
+        author.textContent = role === "user" ? "Tú" : "Asistente";
+        item.append(author);
+      }
+
+      const body = document.createElement("p");
+      body.textContent = text;
+      item.append(body);
+      messages.append(item);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const message = input.value.trim();
+      if (!message) {
+        return;
+      }
+
+      addMessage(message, "user");
+      input.value = "";
+      button.disabled = true;
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message })
+        });
+
+        let data = {};
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          data = {};
+        }
+
+        if (!response.ok) {
+          throw new Error(data.error || "No se pudo enviar el mensaje.");
+        }
+
+        addMessage(data.response || "El asistente no devolvió texto.", "bot");
+      } catch (error) {
+        addMessage(error.message || "No se pudo conectar con el asistente.", "error");
+      } finally {
+        button.disabled = false;
+        input.focus();
+      }
+    });
+  </script>
+</body>
+</html>
