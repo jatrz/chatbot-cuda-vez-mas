@@ -1,4 +1,4 @@
-# CUDA Vez Más Chatbot
+# thepower-chatbot-cudavezmas
 
 Aplicación web de atención al cliente para **CUDA Vez Más**, una tienda online. El usuario escribe en el navegador y el asistente responde en español sobre pedidos, envíos, devoluciones, cambios y atención al cliente.
 
@@ -67,13 +67,13 @@ El entorno virtual de Windows no sirve en Ubuntu. Si ya existe una carpeta `.ven
 
 ## Instalación de dependencias
 
-Sitúate en la carpeta del proyecto dentro de Ubuntu. Si el repositorio está en el disco de Windows:
+Sitúate en la carpeta del proyecto `thepower-chatbot-cudavezmas` dentro de Ubuntu y crea el entorno virtual de Linux:
 
 ```bash
-cd /mnt/c/Users/jtrillo/JOB/git/MINE/THEPOWER/cuda-vez-mas-chatbot
+cd thepower-chatbot-cudavezmas
 ```
 
-Crea el entorno virtual de Linux e instala las dependencias:
+Instala las dependencias:
 
 ```bash
 rm -rf .venv
